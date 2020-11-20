@@ -1,0 +1,47 @@
+FROM ghcr.io/linuxserver/baseimage-ubuntu:arm64v8-bionic
+
+# set version label
+ARG BUILD_DATE
+ARG VERSION
+ARG RRSHARE_RELEASE
+LABEL build_version="Gofinge version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+LABEL maintainer="Gofinge"
+
+# global environment settings
+ENV DEBIAN_FRONTEND="noninteractive" \
+RRSHARE_DOWNLOAD="http://appdown.rrys.tv" \
+RRSHARE_ARCH="arm64" \
+RRSHARE_MEDIA_SERVER_APPLICATION_SUPPORT_DIR="/config/Library/Application Support" \
+RRSHARE_MEDIA_SERVER_MAX_PLUGIN_PROCS="6" \
+RRSHARE_MEDIA_SERVER_USER="abc" \
+RRSHARE_MEDIA_SERVER_INFO_VENDOR="Docker" \
+RRSHARE_MEDIA_SERVER_INFO_DEVICE="Docker Container (Gofinge)"
+
+
+RUN \
+ echo "**** install runtime packages ****" && \
+ apt-get update && \
+ apt-get install -y \
+	tzdata \
+	wget && \
+ echo "**** install rrshare ****" && \
+ mkdir -p /opt/work/rrshareweb/data && \
+ mkdir -p /rrshare && \
+ wget -q ${PLEX_DOWNLOAD}/${RRSHARE_RELEASE} -O /rrshare/${RRSHARE_RELEASE} && \
+ tar -zxvf /rrshare/${RRSHARE_RELEASE} -C /rrshare/ && \
+ echo "**** ensure abc user's home folder is /app ****" && \
+ usermod -d /app abc && \
+ echo "**** cleanup ****" && \
+ apt-get clean && \
+ rm -rf \
+        /rrshare/${RRSHARE_RELEASE} \
+	/tmp/* \
+	/var/lib/apt/lists/* \
+	/var/tmp/*
+
+# add local files
+COPY root/ /
+
+# ports and volumes
+EXPOSE 3001
+VOLUME /opt/work/rrshareweb/data
